@@ -2,62 +2,63 @@ from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 import os
 import openai
-import json
 from dotenv import load_dotenv
-import base64
-from io import BytesIO
-from PIL import Image
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from flask_cors import CORS
+import base64
 import boto3
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Get environment variables
-UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER')
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
-AWS_SECRET_KEY = os.getenv('AWS_SECRET_KEY')
-S3_BUCKET = os.getenv('S3_BUCKET')
+UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
+AWS_SECRET_KEY = os.getenv("AWS_SECRET_KEY")
+S3_BUCKET = os.getenv("S3_BUCKET")
 openai.api_key = OPENAI_API_KEY
 
 # MongoDB client setup
-DBPASS = os.getenv('DBPASS')
-client = MongoClient(f"mongodb+srv://hackdeeznuts:{DBPASS}@htv9mongo.tylcf.mongodb.net/?retryWrites=true&w=majority&appName=htv9mongo")  # Update with your MongoDB connection URI
-db = client['htv9db']  # Replace with your database name
-users_collection = db['user']
-items_collection = db['clothes']
+DBPASS = os.getenv("DBPASS")
+client = MongoClient(
+    f"mongodb+srv://hackdeeznuts:{DBPASS}@htv9mongo.tylcf.mongodb.net/?retryWrites=true&w=majority&appName=htv9mongo"
+)  # Update with your MongoDB connection URI
+db = client["htv9db"]  # Replace with your database name
+users_collection = db["user"]
+items_collection = db["clothes"]
 
 s3_client = boto3.client(
-    's3',
-    aws_access_key_id=AWS_ACCESS_KEY,
-    aws_secret_access_key=AWS_SECRET_KEY
+    "s3", aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY
 )
 
-UPLOAD_FOLDER = 'uploads/'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+UPLOAD_FOLDER = "uploads/"
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+CORS(app, origins=["http://localhost:3000"])
 
 seen_items = []
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 # Home route to display the upload form
-@app.route('/')
+@app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/feedback', methods=['POST'])
+
+@app.route("/feedback", methods=["POST"])
 def feedback():
     data = request.get_json()
 
-    if 'image_url' not in data:     
+    if "image_url" not in data:
         return jsonify({"error": "No image URL provided"}), 400
-    
+
     try:
         # Sending a message to GPT-4 using an image URL
         response = openai.ChatCompletion.create(
@@ -66,11 +67,14 @@ def feedback():
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Analyze the following persons outfit and give recomendations based on their current style including tops, bottoms, shoes, and any accessories the person may be wearing in the photo. Do not give advice to change the style, for example if the person is wearing a casual fit mention what clothes or accessories are popular right now in that fashion. Your output must be no longer than five sentences long."},
+                        {
+                            "type": "text",
+                            "text": "Analyze the following persons outfit and give recomendations based on their current style including tops, bottoms, shoes, and any accessories the person may be wearing in the photo. Do not give advice to change the style, for example if the person is wearing a casual fit mention what clothes or accessories are popular right now in that fashion. Your output must be no longer than five sentences long.",
+                        },
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": data['image_url'],
+                                "url": data["image_url"],
                             },
                         },
                     ],
@@ -79,22 +83,23 @@ def feedback():
             max_tokens=300,
         )
 
-        feedback = response['choices'][0]['message']['content'].strip()
+        feedback = response["choices"][0]["message"]["content"].strip()
 
         return jsonify({"success": True, "feedback": feedback}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-@app.route('/search', methods=['POST'])
+
+@app.route("/search", methods=["POST"])
 def search_similar_items():
     data = request.get_json()
 
     # Ensure the user ID is provided in the request
-    if '_id' not in data:
+    if "_id" not in data:
         return jsonify({"error": "No user ID provided"}), 400
 
-    user_id = data['_id']
+    user_id = data["_id"]
 
     try:
         # Retrieve the user from the database
@@ -104,7 +109,7 @@ def search_similar_items():
             return jsonify({"error": "User not found"}), 404
 
         # Get the user's liked tags (hash map)
-        liked_tags = user.get('liked_tags', {})
+        liked_tags = user.get("liked_tags", {})
 
         # Extract the keys from the hash map to use as an array
         tags_array = list(liked_tags.keys())
@@ -132,17 +137,18 @@ def search_similar_items():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
-@app.route('/like', methods=['POST'])
+
+
+@app.route("/like", methods=["POST"])
 def like_item():
     data = request.get_json()
 
     # Ensure the user ID and item ID are provided in the request
-    if '_id' not in data or 'item_id' not in data:
+    if "_id" not in data or "item_id" not in data:
         return jsonify({"error": "User ID and item ID are required"}), 400
 
-    user_id = data['_id']
-    item_id = data['item_id']
+    user_id = data["_id"]
+    item_id = data["item_id"]
 
     try:
         # Retrieve the user from the database
@@ -152,7 +158,7 @@ def like_item():
             return jsonify({"error": "User not found"}), 404
 
         # Check if the user has already liked this item
-        liked_items = user.get('liked_items', [])
+        liked_items = user.get("liked_items", [])
         if item_id in liked_items:
             return jsonify({"message": "Item already liked"}), 200
 
@@ -163,14 +169,14 @@ def like_item():
             return jsonify({"error": "Item not found"}), 404
 
         # Get the tags from the item
-        tags = item.get('tags', [])
+        tags = item.get("tags", [])
 
         # Ensure tags exist
         if not tags:
             return jsonify({"error": "Item has no tags"}), 404
 
         # Update the user's liked tags map
-        liked_tags = user.get('liked_tags', {})
+        liked_tags = user.get("liked_tags", {})
 
         # Increment the count for each tag in the liked_tags map
         for tag in tags:
@@ -182,7 +188,7 @@ def like_item():
         # Update the user document with the new liked_tags map and liked_items array
         users_collection.update_one(
             {"_id": ObjectId(user_id)},
-            {"$set": {"liked_tags": liked_tags, "liked_items": liked_items}}
+            {"$set": {"liked_tags": liked_tags, "liked_items": liked_items}},
         )
 
         # Return the updated liked_tags
@@ -191,16 +197,17 @@ def like_item():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/unlike', methods=['POST'])
+
+@app.route("/unlike", methods=["POST"])
 def unlike_item():
     data = request.get_json()
 
     # Ensure the user ID and item ID are provided in the request
-    if '_id' not in data or 'item_id' not in data:
+    if "_id" not in data or "item_id" not in data:
         return jsonify({"error": "User ID and item ID are required"}), 400
 
-    user_id = data['_id']
-    item_id = data['item_id']
+    user_id = data["_id"]
+    item_id = data["item_id"]
 
     try:
         # Retrieve the user from the database
@@ -210,7 +217,7 @@ def unlike_item():
             return jsonify({"error": "User not found"}), 404
 
         # Check if the user has actually liked this item
-        liked_items = user.get('liked_items', [])
+        liked_items = user.get("liked_items", [])
         if item_id not in liked_items:
             return jsonify({"message": "Item has not been liked"}), 400
 
@@ -221,14 +228,14 @@ def unlike_item():
             return jsonify({"error": "Item not found"}), 404
 
         # Get the tags from the item
-        tags = item.get('tags', [])
+        tags = item.get("tags", [])
 
         # Ensure tags exist
         if not tags:
             return jsonify({"error": "Item has no tags"}), 404
 
         # Update the user's liked tags map
-        liked_tags = user.get('liked_tags', {})
+        liked_tags = user.get("liked_tags", {})
 
         # Decrement the count for each tag in the liked_tags map
         for tag in tags:
@@ -244,7 +251,7 @@ def unlike_item():
         # Update the user document with the new liked_tags map and liked_items array
         users_collection.update_one(
             {"_id": ObjectId(user_id)},
-            {"$set": {"liked_tags": liked_tags, "liked_items": liked_items}}
+            {"$set": {"liked_tags": liked_tags, "liked_items": liked_items}},
         )
 
         # Return the updated liked_tags
@@ -253,50 +260,56 @@ def unlike_item():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/upload', methods=['POST'])
+
+@app.route("/upload", methods=["POST"])
 def upload_file():
-    if 'file' not in request.files:
+    if "file" not in request.json:
         return jsonify({"error": "No file part"}), 400
 
-    file = request.files['file']
+    base64_data = request.json["file"]
 
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+    try:
+        if "," in base64_data:
+            header, base64_data = base64_data.split(",")
+            file_ext = header.split(";")[0].split("/")[1]
+        else:
+            return jsonify({"error": "Invalid base64 data"}), 400
 
-    if file and allowed_file(file.filename):
-        try:
-            # Secure the filename and save it temporarily
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
+        if not allowed_file(f"file.{file_ext}"):
+            return jsonify({"error": "File type not allowed"}), 400
 
-            # Determine the Content-Type of the file (MIME type)
-            content_type = file.content_type  # This should correctly identify the MIME type
+        file_data = base64.b64decode(base64_data)
 
-            # Upload the image to S3 with public-read ACL and correct Content-Type
-            s3_client.upload_file(
-                file_path,
-                S3_BUCKET,
-                filename,
-                ExtraArgs={
-                    'ACL': 'public-read',
-                    'ContentType': content_type  # Set the correct MIME type
-                }
-            )
+        filename = secure_filename(f"uploaded_file.{file_ext}")
 
-            # Generate a public URL for the uploaded image
-            s3_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
+        print(filename)
+        file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
 
-            # Remove the file from the local server after upload
-            os.remove(file_path)
+        os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-            return jsonify({"success": True, "s3_url": s3_url}), 200
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-    else:
-        return jsonify({"error": "File not allowed"}), 400
+        with open(file_path, "wb") as f:
+            f.write(file_data)
 
-if __name__ == '__main__':
+        s3_client.upload_file(
+            file_path,
+            S3_BUCKET,
+            filename,
+            ExtraArgs={
+                "ACL": "public-read",
+            },
+        )
+        s3_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
+
+        os.remove(file_path)
+
+        return jsonify({"success": True, "s3_url": s3_url}), 200
+
+    except Exception as e:
+        print(str(e))
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
