@@ -41,6 +41,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+seen_items = []
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -111,8 +112,10 @@ def search_similar_items():
         if not tags_array:
             return jsonify({"error": "No liked tags found for user"}), 404
 
-        # Find items that match any of the user's liked tags
-        matching_items = items_collection.find({"tags": {"$in": tags_array}})
+        matching_items = items_collection.find({
+            "tags": {"$in": tags_array},
+            "_id": {"$nin": list(seen_items)}  # Exclude items in seen_items
+        }).limit(5)
 
         # Convert the matching items to a list and serialize ObjectId to string
         item_list = [{**item, "_id": str(item["_id"])} for item in matching_items]
@@ -120,6 +123,9 @@ def search_similar_items():
         # If no items are found, return a message
         if not item_list:
             return jsonify({"message": "No matching items found"}), 200
+
+        for item in item_list:
+            seen_items.append(ObjectId(item["_id"]))
 
         # Return the matching items
         return jsonify({"success": True, "items": item_list}), 200
