@@ -264,10 +264,21 @@ def upload_file():
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
 
-            # Upload the image to S3
-            s3_client.upload_file(file_path, S3_BUCKET, filename)
+            # Determine the Content-Type of the file (MIME type)
+            content_type = file.content_type  # This should correctly identify the MIME type
 
-            # Optionally, generate a public URL for the uploaded image
+            # Upload the image to S3 with public-read ACL and correct Content-Type
+            s3_client.upload_file(
+                file_path,
+                S3_BUCKET,
+                filename,
+                ExtraArgs={
+                    'ACL': 'public-read',
+                    'ContentType': content_type  # Set the correct MIME type
+                }
+            )
+
+            # Generate a public URL for the uploaded image
             s3_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
 
             # Remove the file from the local server after upload
