@@ -14,11 +14,17 @@ print(uri)
 client = MongoClient(uri, server_api=ServerApi('1')) #iainteverseen dis kinda connect before but change if u want i j need the pass @dvir
 
 # select the database and collection
-try:
-    client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
-except Exception as e:
-    print(e)
+db = client['htv9db']
+collection = db['clothes']
+
+# testing getting kyle object
+result = collection.find_one({'item_name': 'kyle'})
+
+if result:
+    print(result)  # prints the document
+    
+else:
+    print("No document found")
 
 
 # use mongo to give frontend image s3 links to display
