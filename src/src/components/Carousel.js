@@ -8,8 +8,7 @@ import Tile from "./Tile";
 function Carousel() {
   const slides = [
     {
-      content: "Slide 1",
-      backgroundColor: "bg-red-500",
+      imageSrc: "https://htv9bucket.s3.us-east-2.amazonaws.com/kyle.jpg",
     },
     {
       content: "Slide 2",
@@ -27,16 +26,15 @@ function Carousel() {
       pagination={{
         dynamicBullets: true,
       }}
+      freeMode={true}
       slidesPerView={1}
       centeredSlides={true}
-      loop={true}
+      spaceBetween={20}
+      className="h-[60vh] w-[80vw] overflow-hidden rounded-2xl shadow-2xl"
     >
       {slides.map((slide, index) => (
-        <SwiperSlide key={index} style={{ zIndex: 1 }}>
-          <Tile
-            content={slide.content}
-            backgroundColor={slide.backgroundColor}
-          />
+        <SwiperSlide key={index} className="overflow-hidden">
+          <Tile imageSrc={slide.imageSrc} />
         </SwiperSlide>
       ))}
     </Swiper>
