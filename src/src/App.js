@@ -1,9 +1,11 @@
-import "./index.css";
+import "swiper/css";
+import Tile from "./components/Tile";
+import Carousel from "./components/Carousel";
 
 function App() {
   return (
-    <div className="bg-black h-screen w-screen">
-      <h1 className="text-white">Tailwind is Working</h1>
+    <div className="bg-white h-screen w-screen flex items-center justify-center">
+      <Carousel />
     </div>
   );
 }
