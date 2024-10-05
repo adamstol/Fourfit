@@ -1,6 +1,6 @@
 import React from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Pagination } from "swiper/modules";
+import { Pagination, Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 import Tile from "./Tile";
@@ -22,7 +22,8 @@ function Carousel() {
 
   return (
     <Swiper
-      modules={[Pagination]}
+      modules={[Navigation, Pagination]}
+      navigation
       pagination={{
         dynamicBullets: true,
       }}
