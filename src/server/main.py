@@ -2,10 +2,13 @@ from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 import os
 import openai
+import json
 from dotenv import load_dotenv
 import base64
 from io import BytesIO
 from PIL import Image
+from pymongo import MongoClient
+from bson.objectid import ObjectId
 
 # Load environment variables from .env file
 load_dotenv()
@@ -16,6 +19,13 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# MongoDB client setup
+DBPASS = os.getenv('DBPASS')
+client = MongoClient(f"mongodb+srv://hackdeeznuts:{DBPASS}@htv9mongo.tylcf.mongodb.net/?retryWrites=true&w=majority&appName=htv9mongo")  # Update with your MongoDB connection URI
+db = client['htv9db']  # Replace with your database name
+users_collection = db['user']
+items_collection = db['clothes']
 
 # Set OpenAI API Key from environment variable
 openai.api_key = OPENAI_API_KEY
@@ -60,6 +70,48 @@ def upload():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@app.route('/search', methods=['POST'])
+def search_similar_items():
+    data = request.get_json()
+
+    # Ensure the user ID is provided in the request
+    if '_id' not in data:
+        return jsonify({"error": "No user ID provided"}), 400
+
+    user_id = data['_id']
+
+    try:
+        # Retrieve the user from the database
+        user = users_collection.find_one({"_id": ObjectId(user_id)})
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Get the user's liked tags (hash map)
+        liked_tags = user.get('liked_tags', {})
+
+        # Extract the keys from the hash map to use as an array
+        tags_array = list(liked_tags.keys())
+
+        if not tags_array:
+            return jsonify({"error": "No liked tags found for user"}), 404
+
+        # Find items that match any of the user's liked tags
+        matching_items = items_collection.find({"tags": {"$in": tags_array}})
+
+        # Convert the matching items to a list and serialize ObjectId to string
+        item_list = [{**item, "_id": str(item["_id"])} for item in matching_items]
+
+        # If no items are found, return a message
+        if not item_list:
+            return jsonify({"message": "No matching items found"}), 200
+
+        # Return the matching items
+        return jsonify({"success": True, "items": item_list}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == '__main__':
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
