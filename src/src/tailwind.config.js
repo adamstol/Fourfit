@@ -7,6 +7,9 @@ module.exports = {
         buttonbg: "#52504b",
       },
     },
+    fontFamily: {
+      nexa: ["Nexa", "sans-serif"],
+    },
   },
   plugins: [],
 };

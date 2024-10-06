@@ -1,9 +1,11 @@
 import React, { useRef, useState } from "react";
 
-function FileUpload() {
+function FileUpload({ setOutput }) {
+  // Accept setOutput as a prop
   const fileInputRef = useRef(null);
   const [fileName, setFileName] = useState("");
   const [imagePreview, setImagePreview] = useState(""); // State for image preview
+  const [isUploaded, setIsUploaded] = useState(false); // New state to track upload status
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -23,6 +25,7 @@ function FileUpload() {
 
   const handleUpload = async (base64) => {
     try {
+      setIsUploaded(true);
       const response = await fetch("http://127.0.0.1:5000/upload", {
         method: "POST",
         headers: {
@@ -32,8 +35,8 @@ function FileUpload() {
       });
 
       if (response.ok) {
-        console.log(response.text());
-        alert("File uploaded successfully!");
+        const responseJSON = await response.json();
+        setOutput(responseJSON["feedback"]);
       } else {
         alert("Failed to upload file.");
       }
@@ -57,12 +60,14 @@ function FileUpload() {
         className="hidden"
       />
 
-      <button
-        onClick={triggerFileInput}
-        className="bg-buttonbg text-white px-4 py-2 rounded hover:bg-red-600"
-      >
-        {fileName ? `Selected: ${fileName}` : "Upload Image"}
-      </button>
+      {!isUploaded && (
+        <button
+          onClick={triggerFileInput}
+          className="bg-buttonbg text-white px-4 py-2 rounded hover:bg-red-600"
+        >
+          {fileName ? `Selected: ${fileName}` : "Upload Image"}
+        </button>
+      )}
 
       {imagePreview && (
         <img

@@ -39,7 +39,7 @@ function Carousel() {
   return (
     <Swiper
       modules={[Navigation, Pagination]}
-      navigation
+      navigation={true}
       pagination={{
         dynamicBullets: true,
       }}
@@ -47,7 +47,7 @@ function Carousel() {
       slidesPerView={1}
       centeredSlides={true}
       spaceBetween={20}
-      className="h-[60vh] w-[80vw] overflow-hidden rounded-2xl shadow-2xl"
+      className="h-[60vh] w-[70vw] overflow-hidden rounded-2xl shadow-2xl"
       onSlideChange={(swiper) => {
         if (swiper.activeIndex >= slides.length - 2) {
           fetchSlides();

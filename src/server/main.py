@@ -116,15 +116,15 @@ def search_similar_items():
             return jsonify({"error": "No liked tags found for user"}), 404
 
         random_items = []
-        for i in range(5):
+        for _ in range(5):
             # choose random tag frm tags_array
             random_tag = random.choice(tags_array)
-            
+
             # use random tag in matching item
             matching_item = items_collection.find_one(
                 {
                     "tags": {"$eq": random_tag},
-                    "_id": {"$nin": list(seen_items)}  # Exclude items in seen_items
+                    "_id": {"$nin": list(seen_items)},
                 }
             )
 
@@ -137,12 +137,6 @@ def search_similar_items():
                 seen_items.add(ObjectId(item_id))
             else:
                 print("No matching item found")
-
-
-
-
-
-
 
         # Convert the matching items to a list and serialize ObjectId to string
         item_list = [{**item, "_id": str(item["_id"])} for item in random_items]

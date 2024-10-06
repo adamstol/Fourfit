@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import heartIcon from "../media/heart.svg";
+import bagIcon from "../media/bag.svg";
 
 function Tile({ slide }) {
   const [isLiked, setIsLiked] = useState(false);
@@ -33,25 +34,52 @@ function Tile({ slide }) {
   };
 
   return (
-    <div className="h-full bg-white p-8 flex flex-col items-center justify-between rounded-2xl shadow-lg overflow-hidden">
+    <div className="h-full bg-white p-8 flex flex-row items-center justify-center rounded-2xl shadow-lg overflow-hidden">
       <img
         src={slide["image_src"]}
         alt="Product"
-        className="h-3/4 w-auto rounded-2xl object-contain"
+        className="h-5/6 w-auto rounded-2xl object-contain"
       />
 
-      <button onClick={handleClick} className="m-6">
-        <img
-          src={heartIcon}
-          alt="Like"
-          className={"h-8 w-auto"}
-          style={{
-            filter: isLiked
-              ? "invert(29%) sepia(75%) saturate(6210%) hue-rotate(345deg) brightness(94%) contrast(85%)"
-              : "invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(0%)",
-          }}
-        />
-      </button>
+      <div className="my-8 px-4">
+        <div className="text-3xl">
+          {slide["product_link"]
+            .split(".")[1]
+            .replace(/\b\w/g, (char) => char.toUpperCase())}{" "}
+          {slide["item_type"].replace(/\b\w/g, (char) => char.toUpperCase())}
+        </div>
+        <div className="text-gray-400">
+          {slide["tags"].map((tag) => `#${tag}`).join(", ")}
+        </div>
+
+        <div className="flex flex-row pt-2">
+          <button onClick={handleClick} className="mr-6 pt-[2px]">
+            <img
+              src={heartIcon}
+              alt="Like"
+              className={"h-8 w-auto"}
+              style={{
+                filter: isLiked
+                  ? "invert(29%) sepia(75%) saturate(6210%) hue-rotate(345deg) brightness(94%) contrast(85%)"
+                  : "invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(0%)",
+              }}
+            />
+          </button>
+
+          <a href={slide["product_link"]} target="_blank">
+            <img
+              src={bagIcon}
+              alt="Redirect to Product Page"
+              href={slide["product_link"]}
+              className={"h-8 w-auto"}
+              style={{
+                filter:
+                  "invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(0%)",
+              }}
+            />
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
