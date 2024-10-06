@@ -10,10 +10,8 @@ from flask_cors import CORS
 import base64
 import boto3
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Get environment variables
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
@@ -21,12 +19,11 @@ AWS_SECRET_KEY = os.getenv("AWS_SECRET_KEY")
 S3_BUCKET = os.getenv("S3_BUCKET")
 openai.api_key = OPENAI_API_KEY
 
-# MongoDB client setup
 DBPASS = os.getenv("DBPASS")
 client = MongoClient(
     f"mongodb+srv://hackdeeznuts:{DBPASS}@htv9mongo.tylcf.mongodb.net/?retryWrites=true&w=majority&appName=htv9mongo"
-)  # Update with your MongoDB connection URI
-db = client["htv9db"]  # Replace with your database name
+)
+db = client["htv9db"]
 users_collection = db["user"]
 items_collection = db["clothes"]
 
@@ -48,7 +45,6 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# Home route to display the upload form
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -56,9 +52,8 @@ def index():
 
 def feedback(filename):
     try:
-        # Sending a message to GPT-4 using an image URL
         response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",  # Specify the model you want to use
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "user",
@@ -91,23 +86,19 @@ def feedback(filename):
 def search_similar_items():
     data = request.get_json()
 
-    # Ensure the user ID is provided in the request
     if "_id" not in data:
         return jsonify({"error": "No user ID provided"}), 400
 
     user_id = data["_id"]
 
     try:
-        # Retrieve the user from the database
         user = users_collection.find_one({"_id": ObjectId(user_id)})
 
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        # Get the user's liked tags (hash map)
         liked_tags = user.get("liked_tags", {})
 
-        # Extract the keys from the hash map to use as an array
         tags_array = [
             tag for tag, weight in liked_tags.items() for _ in range(weight or 1)
         ]
@@ -117,10 +108,8 @@ def search_similar_items():
 
         random_items = []
         for _ in range(5):
-            # choose random tag frm tags_array
             random_tag = random.choice(tags_array)
 
-            # use random tag in matching item
             matching_item = items_collection.find_one(
                 {
                     "tags": {"$eq": random_tag},
@@ -130,25 +119,19 @@ def search_similar_items():
 
             if matching_item:
                 item_id = matching_item["_id"]
-                # Do something with the item_id
-                # append matching item to list
                 random_items.append(matching_item)
-                # add random item to seen items
                 seen_items.add(ObjectId(item_id))
             else:
                 print("No matching item found")
 
-        # Convert the matching items to a list and serialize ObjectId to string
         item_list = [{**item, "_id": str(item["_id"])} for item in random_items]
 
-        # If no items are found, return a message
         if not item_list:
             return jsonify({"message": "No matching items found"}), 200
 
         for item in item_list:
             seen_items.add(ObjectId(item["_id"]))
 
-        # Return the matching items
         return jsonify({"success": True, "items": item_list}), 200
 
     except Exception as e:
@@ -160,7 +143,6 @@ def search_similar_items():
 def like_item():
     data = request.get_json()
 
-    # Ensure the user ID and item ID are provided in the request
     if "_id" not in data or "item_id" not in data:
         return jsonify({"error": "User ID and item ID are required"}), 400
 
@@ -168,47 +150,37 @@ def like_item():
     item_id = data["item_id"]
 
     try:
-        # Retrieve the user from the database
         user = users_collection.find_one({"_id": ObjectId(user_id)})
 
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        # Check if the user has already liked this item
         liked_items = user.get("liked_items", [])
         if item_id in liked_items:
             return jsonify({"message": "Item already liked"}), 200
 
-        # Retrieve the item from the database
         item = items_collection.find_one({"_id": ObjectId(item_id)})
 
         if not item:
             return jsonify({"error": "Item not found"}), 404
 
-        # Get the tags from the item
         tags = item.get("tags", [])
 
-        # Ensure tags exist
         if not tags:
             return jsonify({"error": "Item has no tags"}), 404
 
-        # Update the user's liked tags map
         liked_tags = user.get("liked_tags", {})
 
-        # Increment the count for each tag in the liked_tags map
         for tag in tags:
             liked_tags[tag] = liked_tags.get(tag, 0) + 1
 
-        # Add the item to liked_items
         liked_items.append(item_id)
 
-        # Update the user document with the new liked_tags map and liked_items array
         users_collection.update_one(
             {"_id": ObjectId(user_id)},
             {"$set": {"liked_tags": liked_tags, "liked_items": liked_items}},
         )
 
-        # Return the updated liked_tags
         return jsonify({"success": True, "liked_tags": liked_tags}), 200
 
     except Exception as e:
@@ -219,7 +191,6 @@ def like_item():
 def unlike_item():
     data = request.get_json()
 
-    # Ensure the user ID and item ID are provided in the request
     if "_id" not in data or "item_id" not in data:
         return jsonify({"error": "User ID and item ID are required"}), 400
 
@@ -227,51 +198,40 @@ def unlike_item():
     item_id = data["item_id"]
 
     try:
-        # Retrieve the user from the database
         user = users_collection.find_one({"_id": ObjectId(user_id)})
 
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        # Check if the user has actually liked this item
         liked_items = user.get("liked_items", [])
         if item_id not in liked_items:
             return jsonify({"message": "Item has not been liked"}), 400
 
-        # Retrieve the item from the database
         item = items_collection.find_one({"_id": ObjectId(item_id)})
 
         if not item:
             return jsonify({"error": "Item not found"}), 404
 
-        # Get the tags from the item
         tags = item.get("tags", [])
 
-        # Ensure tags exist
         if not tags:
             return jsonify({"error": "Item has no tags"}), 404
 
-        # Update the user's liked tags map
         liked_tags = user.get("liked_tags", {})
 
-        # Decrement the count for each tag in the liked_tags map
         for tag in tags:
             if tag in liked_tags:
                 liked_tags[tag] -= 1
-                # If the count reaches 0, remove the tag from the map
                 if liked_tags[tag] <= 0:
                     del liked_tags[tag]
 
-        # Remove the item from liked_items
         liked_items.remove(item_id)
 
-        # Update the user document with the new liked_tags map and liked_items array
         users_collection.update_one(
             {"_id": ObjectId(user_id)},
             {"$set": {"liked_tags": liked_tags, "liked_items": liked_items}},
         )
 
-        # Return the updated liked_tags
         return jsonify({"success": True, "liked_tags": liked_tags}), 200
 
     except Exception as e:

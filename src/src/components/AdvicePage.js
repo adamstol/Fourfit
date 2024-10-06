@@ -1,12 +1,12 @@
-// AdvicePage.jsx
 import React, { useState } from "react";
 import FileUpload from "./FileUpload";
 import magnifyingIcon from "../media/magnifying.svg";
 import { useNavigate } from "react-router-dom";
+import spinner from "../media/spinner.svg";
 
 function AdvicePage() {
   const navigate = useNavigate();
-  const [output, setOutput] = useState(""); // State to hold the server response
+  const [output, setOutput] = useState("");
 
   const handleNavigateSearch = () => {
     navigate("/search");
@@ -27,12 +27,13 @@ function AdvicePage() {
       <button onClick={handleNavigateSearch} className="-mt-32 mb-16">
         <img src={magnifyingIcon} alt="Navigate to Advice" />
       </button>
-      <div className="h-[60vh] w-[70vw] bg-white rounded-2xl shadow-lg flex flex-col items-center justify-center p-6 space-y-6">
+      <div className="h-[60vh] w-[70vw] bg-white rounded-2xl shadow-lg flex flex-row items-center justify-center p-6 space-y-6">
         <FileUpload setOutput={setOutput} />
+
         {output && (
           <div
             id="output"
-            className="w-full md:w-1/2 p-4 overflow-auto border rounded"
+            className="w-1/2 p-4 overflow-auto border rounded"
             dangerouslySetInnerHTML={{ __html: output }}
           ></div>
         )}

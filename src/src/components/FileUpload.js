@@ -1,11 +1,11 @@
 import React, { useRef, useState } from "react";
+import spinner from "../media/spinner.svg";
 
 function FileUpload({ setOutput }) {
-  // Accept setOutput as a prop
   const fileInputRef = useRef(null);
   const [fileName, setFileName] = useState("");
-  const [imagePreview, setImagePreview] = useState(""); // State for image preview
-  const [isUploaded, setIsUploaded] = useState(false); // New state to track upload status
+  const [imagePreview, setImagePreview] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -16,7 +16,7 @@ function FileUpload({ setOutput }) {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = reader.result;
-        setImagePreview(base64); // Set the base64 string for image preview
+        setImagePreview(base64);
         handleUpload(base64);
       };
       reader.readAsDataURL(selectedFile);
@@ -24,8 +24,8 @@ function FileUpload({ setOutput }) {
   };
 
   const handleUpload = async (base64) => {
+    setIsUploading(true);
     try {
-      setIsUploaded(true);
       const response = await fetch("http://127.0.0.1:5000/upload", {
         method: "POST",
         headers: {
@@ -43,6 +43,8 @@ function FileUpload({ setOutput }) {
     } catch (error) {
       console.error("Error uploading file:", error);
       alert("An error occurred while uploading the file.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -60,7 +62,7 @@ function FileUpload({ setOutput }) {
         className="hidden"
       />
 
-      {!isUploaded && (
+      {!isUploading && !imagePreview && (
         <button
           onClick={triggerFileInput}
           className="bg-buttonbg text-white px-4 py-2 rounded hover:bg-red-600"
@@ -69,7 +71,17 @@ function FileUpload({ setOutput }) {
         </button>
       )}
 
-      {imagePreview && (
+      {isUploading && (
+        <div className="flex justify-center items-center h-full">
+          <img
+            src={spinner}
+            alt="Loading..."
+            className="w-12 h-12 animate-spin"
+          />
+        </div>
+      )}
+
+      {!isUploading && imagePreview && (
         <img
           src={imagePreview}
           alt="Preview"
