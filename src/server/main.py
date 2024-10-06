@@ -1,3 +1,4 @@
+import random
 from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 import os
@@ -107,27 +108,51 @@ def search_similar_items():
         liked_tags = user.get("liked_tags", {})
 
         # Extract the keys from the hash map to use as an array
-        tags_array = list(liked_tags.keys())
+        tags_array = [
+            tag for tag, weight in liked_tags.items() for _ in range(weight or 1)
+        ]
 
         if not tags_array:
             return jsonify({"error": "No liked tags found for user"}), 404
 
-        matching_items = items_collection.find(
-            {
-                "tags": {"$in": tags_array},
-                "_id": {"$nin": list(seen_items)},  # Exclude items in seen_items
-            }
-        ).limit(5)
+        random_items = []
+        for i in range(5):
+            # choose random tag frm tags_array
+            random_tag = random.choice(tags_array)
+            
+            # use random tag in matching item
+            matching_item = items_collection.find_one(
+                {
+                    "tags": {"$eq": random_tag},
+                    "_id": {"$nin": list(seen_items)}  # Exclude items in seen_items
+                }
+            )
+
+            if matching_item:
+                item_id = matching_item["_id"]
+                # Do something with the item_id
+                # append matching item to list
+                random_items.append(matching_item)
+                # add random item to seen items
+                seen_items.add(ObjectId(item_id))
+            else:
+                print("No matching item found")
+
+
+
+
+
+
 
         # Convert the matching items to a list and serialize ObjectId to string
-        item_list = [{**item, "_id": str(item["_id"])} for item in matching_items]
+        item_list = [{**item, "_id": str(item["_id"])} for item in random_items]
 
         # If no items are found, return a message
         if not item_list:
             return jsonify({"message": "No matching items found"}), 200
 
         for item in item_list:
-            seen_items.append(ObjectId(item["_id"]))
+            seen_items.add(ObjectId(item["_id"]))
 
         # Return the matching items
         return jsonify({"success": True, "items": item_list}), 200
