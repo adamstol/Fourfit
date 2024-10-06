@@ -40,7 +40,8 @@ app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 CORS(app, origins=["http://localhost:3000"])
 
-seen_items = []
+seen_items = set()
+
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -52,13 +53,7 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/feedback", methods=["POST"])
-def feedback():
-    data = request.get_json()
-
-    if "image_url" not in data:
-        return jsonify({"error": "No image URL provided"}), 400
-
+def feedback(filename):
     try:
         # Sending a message to GPT-4 using an image URL
         response = openai.ChatCompletion.create(
@@ -74,7 +69,7 @@ def feedback():
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": data["image_url"],
+                                "url": f"https://htv9bucket.s3.us-east-2.amazonaws.com/{filename}",
                             },
                         },
                     ],
@@ -117,10 +112,12 @@ def search_similar_items():
         if not tags_array:
             return jsonify({"error": "No liked tags found for user"}), 404
 
-        matching_items = items_collection.find({
-            "tags": {"$in": tags_array},
-            "_id": {"$nin": list(seen_items)}  # Exclude items in seen_items
-        }).limit(5)
+        matching_items = items_collection.find(
+            {
+                "tags": {"$in": tags_array},
+                "_id": {"$nin": list(seen_items)},  # Exclude items in seen_items
+            }
+        ).limit(5)
 
         # Convert the matching items to a list and serialize ObjectId to string
         item_list = [{**item, "_id": str(item["_id"])} for item in matching_items]
@@ -136,6 +133,7 @@ def search_similar_items():
         return jsonify({"success": True, "items": item_list}), 200
 
     except Exception as e:
+        print(str(e))
         return jsonify({"error": str(e)}), 500
 
 
@@ -298,11 +296,10 @@ def upload_file():
                 "ACL": "public-read",
             },
         )
-        s3_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
 
         os.remove(file_path)
 
-        return jsonify({"success": True, "s3_url": s3_url}), 200
+        return feedback(filename)
 
     except Exception as e:
         print(str(e))

@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import heartIcon from "../media/heart.svg";
 
-function Tile({ imageSrc }) {
+function Tile({ slide }) {
   const [isLiked, setIsLiked] = useState(false);
+  const userId = "670181f33b70766a42fa8384";
 
   const handleClick = async () => {
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
 
-    const endpoint = newLikedState ? "/like" : "/unlike";
+    const endpoint = newLikedState
+      ? "http://127.0.0.1:5000/like"
+      : "http://127.0.0.1:5000/unlike";
 
     try {
       const response = await fetch(endpoint, {
@@ -16,7 +19,7 @@ function Tile({ imageSrc }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ liked: newLikedState }),
+        body: JSON.stringify({ _id: userId, item_id: slide["_id"] }),
       });
 
       if (!response.ok) {
@@ -32,7 +35,7 @@ function Tile({ imageSrc }) {
   return (
     <div className="h-full bg-white p-8 flex flex-col items-center justify-between rounded-2xl shadow-lg overflow-hidden">
       <img
-        src={imageSrc}
+        src={slide["image_src"]}
         alt="Product"
         className="h-3/4 w-auto rounded-2xl object-contain"
       />

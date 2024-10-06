@@ -32,6 +32,7 @@ function FileUpload() {
       });
 
       if (response.ok) {
+        console.log(response.text());
         alert("File uploaded successfully!");
       } else {
         alert("Failed to upload file.");
@@ -63,7 +64,6 @@ function FileUpload() {
         {fileName ? `Selected: ${fileName}` : "Upload Image"}
       </button>
 
-      {/* Display image preview */}
       {imagePreview && (
         <img
           src={imagePreview}
