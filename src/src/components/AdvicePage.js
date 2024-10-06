@@ -8,19 +8,26 @@ function AdvicePage() {
   const navigate = useNavigate();
   const [output, setOutput] = useState(""); // State to hold the server response
 
-  const handleNavigate = () => {
+  const handleNavigateSearch = () => {
+    navigate("/search");
+  };
+
+  const handleNavigateHome = () => {
     navigate("/");
   };
 
   return (
     <div className="bg-mainbg min-h-screen w-screen flex flex-col items-center justify-center p-4">
-      <div className="absolute left-4 top-3 font-nexa text-4xl font-bold">
+      <div
+        onClick={handleNavigateHome}
+        className="absolute left-4 top-3 font-nexa text-4xl font-bold hover:cursor-pointer"
+      >
         fourfit
       </div>
-      <button onClick={handleNavigate} className="-mt-32 mb-16">
+      <button onClick={handleNavigateSearch} className="-mt-32 mb-16">
         <img src={magnifyingIcon} alt="Navigate to Advice" />
       </button>
-      <div className="h-[60vh] w-[80vw] bg-white rounded-2xl shadow-lg flex flex-col md:flex-row items-center justify-center p-6 space-y-6 md:space-y-0 md:space-x-6">
+      <div className="h-[60vh] w-[70vw] bg-white rounded-2xl shadow-lg flex flex-col items-center justify-center p-6 space-y-6">
         <FileUpload setOutput={setOutput} />
         {output && (
           <div

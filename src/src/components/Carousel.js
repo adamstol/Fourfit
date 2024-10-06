@@ -47,7 +47,7 @@ function Carousel() {
       slidesPerView={1}
       centeredSlides={true}
       spaceBetween={20}
-      className="h-[60vh] w-[70vw] overflow-hidden rounded-2xl shadow-2xl"
+      className="h-[60vh] w-[70vw] overflow-hidden rounded-2xl shadow-lg bg-white"
       onSlideChange={(swiper) => {
         if (swiper.activeIndex >= slides.length - 2) {
           fetchSlides();
