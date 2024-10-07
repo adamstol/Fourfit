@@ -1,6 +1,4 @@
 # Fourfit
-## Project for Hack the Valley 2024.
-
 ## Make your stylist forfeit with Fourfit
 
 ## Demo Video ▶️
