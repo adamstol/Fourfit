@@ -1,6 +1,13 @@
 # Fourfit
 ## Project for Hack the Valley 2024.
 
+## Make your stylist forfeit with Fourfit
+
+## Demo Video ▶️
+
+[![Fourfit Demo - Hack The Valley 2024](https://i9.ytimg.com/vi/74pvfyo1RQE/mqdefault.jpg)](https://youtu.be/74pvfyo1RQE)
+
+
 ## 💡 Inspiration
 The idea for Fourfit originated from the need to help individuals discover and enhance their fashion sense by offering personalized clothing suggestions based on their uploaded images. We aimed to create an engaging and user-friendly platform that utilizes AI technology to analyze outfits and provide tailored recommendations, helping users feel more confident in their fashion choices.
 
