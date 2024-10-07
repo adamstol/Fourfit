@@ -5,7 +5,7 @@
 
 ## Demo Video ▶️
 
-[![Fourfit Demo - Hack The Valley 2024](https://i9.ytimg.com/vi/74pvfyo1RQE/mqdefault.jpg)](https://youtu.be/74pvfyo1RQE)
+[![Fourfit Demo - Hack The Valley 2024](https://img.youtube.com/vi/74pvfyo1RQE/0.jpg)](https://youtu.be/74pvfyo1RQE)
 
 
 ## 💡 Inspiration
